@@ -18,6 +18,7 @@ app.py — Summit Logic 무료 엑셀 데이터 정제기 (Lead Magnet)
 """
 
 import re
+import zipfile
 from io import BytesIO
 from typing import List, Tuple
 
@@ -67,6 +68,57 @@ _ADDRESS_KEYWORDS = [
 
 # NaN·빈값으로 판별할 문자열 집합 (frozenset으로 O(1) 탐색)
 _NULL_STRINGS = frozenset({"nan", "none", "null", "n/a", "-", ""})
+
+# 스마트스토어 엑셀 헤더 행 자동 탐색에 사용할 키워드
+# 이 중 2개 이상이 한 행에 존재하면 해당 행을 헤더로 판정합니다.
+_HEADER_PROBE_KEYWORDS = [
+    "상품주문번호", "주문번호", "수취인명", "수취인",
+    "연락처", "배송지", "주소", "상품명", "택배사", "송장번호",
+]
+
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  1-B. HEADER DETECTION — 헤더 행 자동 탐색               ║
+# ║  → 확장 시 validators.py 로 분리                         ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+def _find_header_row(file_bytes: bytes, max_scan: int = 20) -> int:
+    """
+    스마트스토어 엑셀의 실제 헤더 행 위치를 자동 탐색합니다.
+
+    스마트스토어 주문서에는 상단에 "아래 항목을 변경/삭제하지 마세요" 등의
+    안내 문구가 1~2행 삽입되어 있어, 단순히 header=0으로 읽으면
+    안내 문구가 컬럼명이 되어 모든 키워드 기반 감지가 실패합니다.
+
+    탐색 로직:
+      1. header=None으로 원시 데이터 최대 max_scan행 읽기
+      2. 각 행에서 _HEADER_PROBE_KEYWORDS와 정확 일치하는 셀 개수 카운트
+      3. 2개 이상 일치하는 첫 번째 행을 헤더로 판정
+      4. 키워드 불일치 시 0 반환 (일반 엑셀 파일 호환)
+
+    Args:
+        file_bytes: 엑셀 파일 바이트
+        max_scan:   탐색할 최대 행 수 (기본 20행, 성능 보호)
+
+    Returns:
+        헤더 행의 0-based 인덱스
+    """
+    try:
+        df_raw = pd.read_excel(
+            BytesIO(file_bytes), header=None, dtype=str, nrows=max_scan
+        )
+    except Exception:
+        return 0
+
+    for idx, row in df_raw.iterrows():
+        cells = row.astype(str).str.strip()
+        matches = sum(
+            1 for kw in _HEADER_PROBE_KEYWORDS if cells.eq(kw).any()
+        )
+        if matches >= 2:
+            return int(idx)
+
+    return 0
 
 
 # ╔═══════════════════════════════════════════════════════════╗
@@ -238,6 +290,7 @@ def clean_dataframe(
     업로드된 엑셀 파일의 바이트를 받아 전체 정제 파이프라인을 실행합니다.
 
     처리 순서:
+      Step 0. 헤더 행 자동 탐색 (스마트스토어 안내 문구 행 스킵)
       Step 1. 모든 셀 → 이모지·비표준 특수문자 제거
       Step 2. 전화번호 컬럼 자동 감지 → 하이픈 포맷(010-0000-0000) 적용
       Step 3. 성함 컬럼 → 앞뒤 공백 제거
@@ -255,15 +308,35 @@ def clean_dataframe(
         Tuple[pd.DataFrame, dict]:
           - 정제가 완료된 DataFrame (원본 컬럼 구조 유지)
           - 처리 통계 딕셔너리 (행 수, 컬럼 수, 각 정제 항목별 처리 건수)
+
+    Raises:
+        ValueError: 데이터가 비어있는 경우
     """
+    # ── Step 0: 헤더 행 자동 탐색 ──
+    header_row = _find_header_row(file_bytes)
+
     df = pd.read_excel(
-        BytesIO(file_bytes), sheet_name=sheet_name, dtype=str
+        BytesIO(file_bytes),
+        sheet_name=sheet_name,
+        header=header_row,
+        dtype=str,
     )
     df = df.fillna("")
+
+    # 빈 행·헤더 잔재 제거: 모든 셀이 비어있는 행 삭제
+    df = df[~df.apply(lambda r: all(v.strip() == "" for v in r), axis=1)]
+    df = df.reset_index(drop=True)
+
+    if len(df) == 0:
+        raise ValueError(
+            "업로드한 파일에 데이터가 없습니다.\n"
+            "엑셀 파일에 주문 데이터가 포함되어 있는지 확인해 주세요."
+        )
 
     stats = {
         "total_rows": len(df),
         "total_cols": len(df.columns),
+        "header_row_detected": header_row,
         "emoji_removed": 0,
         "phone_formatted": 0,
         "whitespace_trimmed": 0,
@@ -356,10 +429,7 @@ def inject_custom_css():
     st.markdown(
         """
         <style>
-            @import url(
-                'https://fonts.googleapis.com/css2?family=Noto+Sans+KR'
-                ':wght@400;600;700;900&display=swap'
-            );
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&display=swap');
 
             .main { background-color: #ffffff; }
             body  { font-family: 'Noto Sans KR', sans-serif; }
@@ -558,6 +628,21 @@ def inject_custom_css():
                 font-size: 0.78rem;
                 padding: 24px 0 12px;
             }
+
+            /* ── 모바일 반응형 ── */
+            @media (max-width: 640px) {
+                .hero-header h1 { font-size: 1.5rem; }
+                .stat-grid { flex-direction: column; }
+                .stat-card { min-width: 100%; }
+                .stat-card .num { font-size: 1.4rem; }
+                .trust-flow { flex-direction: column; gap: 4px; }
+                .trust-arrow { transform: rotate(90deg); }
+                .trust-step { max-width: 100%; min-width: 100%; }
+                .zs-badges { flex-direction: column; gap: 8px; align-items: center; }
+                .cta-box { padding: 24px 16px; }
+                .cta-box .highlight { font-size: 1.1rem; }
+                .cta-btn { padding: 10px 24px; font-size: 0.9rem; }
+            }
         </style>
         """,
         unsafe_allow_html=True,
@@ -708,9 +793,9 @@ def render_cta():
                 <span class="highlight">매달 27만 원</span>의 배송비를 아끼세요!
             </p>
             <a class="cta-btn"
-               href="https://summitlogic.streamlit.app"
+               href="https://open.kakao.com/o/summitlogic"
                target="_blank">
-                🚀 써밋로직 무료 체험하기
+                🚀 써밋로직 도입 문의하기
             </a>
         </div>
         """,
@@ -787,11 +872,34 @@ def main():
 
     if uploaded_file is not None:
         try:
-            # file_bytes로 변환하여 @st.cache_data 해싱에 활용
             file_bytes = uploaded_file.getvalue()
 
             with st.spinner("🔄 데이터를 정제하고 있습니다..."):
                 cleaned_df, stats = clean_dataframe(file_bytes)
+
+            # ── 헤더 행 탐색 결과 안내 (0이 아닌 경우만 표시) ──
+            if stats.get("header_row_detected", 0) > 0:
+                st.info(
+                    f"📌 엑셀 상단의 안내 문구를 감지하여 "
+                    f"**{stats['header_row_detected'] + 1}행**을 "
+                    f"컬럼 헤더로 사용했습니다."
+                )
+
+            # ── 컬럼 미감지 경고 ──
+            no_phone = len(stats["phone_columns"]) == 0
+            no_name = len(stats["name_columns"]) == 0
+            no_addr = len(stats["address_columns"]) == 0
+            if no_phone and no_name and no_addr:
+                st.warning(
+                    "⚠️ 전화번호·성함·주소 컬럼을 자동 감지하지 못했습니다. "
+                    "이모지 제거만 수행되었습니다. "
+                    "스마트스토어에서 다운로드한 원본 엑셀 파일인지 확인해 주세요."
+                )
+            elif no_phone:
+                st.warning(
+                    "⚠️ 전화번호 컬럼을 감지하지 못했습니다. "
+                    "전화번호 포맷 정제가 생략되었습니다."
+                )
 
             # ── 처리 완료 메시지 ──
             st.success(
@@ -828,6 +936,18 @@ def main():
                 use_container_width=True,
             )
 
+        except ValueError as ve:
+            st.error(f"⚠️ {ve}")
+        except zipfile.BadZipFile:
+            st.error(
+                "⚠️ 이 파일을 열 수 없습니다.\n\n"
+                "**가능한 원인:**\n"
+                "- 비밀번호로 보호된 엑셀 파일\n"
+                "- 손상된 파일\n"
+                "- .xlsx가 아닌 다른 형식의 파일\n\n"
+                "스마트스토어에서 다시 다운로드하거나, "
+                "엑셀에서 열어 **다른 이름으로 저장**한 뒤 다시 업로드해 주세요."
+            )
         except Exception as e:
             st.error(f"⚠️ 파일 처리 중 오류가 발생했습니다: {e}")
             with st.expander("오류 상세"):
