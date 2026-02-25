@@ -793,9 +793,9 @@ def render_cta():
                 <span class="highlight">매달 27만 원</span>의 배송비를 아끼세요!
             </p>
             <a class="cta-btn"
-               href="https://summit-remover.com"
+               href="https://summit-logic-main.streamlit.app"
                target="_blank">
-                🚀 써밋로직 도입 문의하기
+                🚀 써밋로직 V3.1 바로가기
             </a>
         </div>
         """,
