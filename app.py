@@ -414,7 +414,7 @@ def to_excel_bytes(
 def setup_page_config():
     """Streamlit 페이지 메타 설정 (탭 제목, 아이콘, 레이아웃)."""
     st.set_page_config(
-        page_title="무료 엑셀 정제기 | Summit Logic",
+        page_title="무료 엑셀 정제기 | Summit Remover",
         page_icon="📦",
         layout="centered",
     )
@@ -793,7 +793,7 @@ def render_cta():
                 <span class="highlight">매달 27만 원</span>의 배송비를 아끼세요!
             </p>
             <a class="cta-btn"
-               href="https://open.kakao.com/o/summitlogic"
+               href="https://summit-remover.com"
                target="_blank">
                 🚀 써밋로직 도입 문의하기
             </a>
@@ -811,7 +811,7 @@ def render_privacy_notice():
     with st.expander("🔒 개인정보 처리 방침 상세", expanded=False):
         st.markdown(
             """
-            **Summit Logic 데이터 처리 원칙**
+            **Summit Remover 데이터 처리 원칙**
 
             | 항목 | 내용 |
             |------|------|
@@ -830,8 +830,8 @@ def render_footer():
     st.markdown(
         """
         <div class="footer">
-            Summit Logic &nbsp;|&nbsp;
-            스마트스토어 × 대한통운 물류 자동화<br>
+            Summit Remover &nbsp;|&nbsp;
+            summit-remover.com<br>
             Zero-Storage 원칙: 업로드된 파일은 서버에 저장되지 않으며
             처리 즉시 메모리에서 삭제됩니다.
         </div>
