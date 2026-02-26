@@ -35,6 +35,7 @@ from ui.components import (
     render_privacy_notice,
     render_security_banner,
     render_stats,
+    render_founder_story,
     setup_page_config,
 )
 
