@@ -11,7 +11,7 @@ import streamlit as st
 def setup_page_config():
     """Streamlit 페이지 메타 설정 (탭 제목, 아이콘, 레이아웃)."""
     st.set_page_config(
-        page_title="무료 엑셀 정제기 | Summit Remover",
+        page_title="Summit Logic Magnet | 자동화의 시작",
         page_icon="📦",
         layout="centered",
     )
@@ -34,19 +34,19 @@ def inject_custom_css():
             /* ── 히어로 헤더 ── */
             .hero-header {
                 text-align: center;
-                padding: 40px 0 20px;
+                padding: 40px 0 12px;
             }
             .hero-header h1 {
-                font-size: 2.2rem;
-                font-weight: 900;
-                color: #1a1a2e;
+                font-size: 2.0rem;
+                font-weight: 800;
+                color: #16355b;
                 margin-bottom: 8px;
                 line-height: 1.4;
             }
             .hero-header .accent { color: #1a73e8; }
             .hero-header p {
                 font-size: 1rem;
-                color: #5f6368;
+                color: #4b5563;
                 line-height: 1.7;
             }
 
@@ -82,7 +82,7 @@ def inject_custom_css():
 
             /* ── CTA 배너 (하단 마케팅 영역) ── */
             .cta-box {
-                background: linear-gradient(135deg, #1a73e8, #174ea6);
+                background: linear-gradient(135deg, #0f172a, #1e293b);
                 border-radius: 16px;
                 padding: 32px 24px;
                 text-align: center;
@@ -251,13 +251,14 @@ def render_header():
     st.markdown(
         """
         <div class="hero-header">
-            <h1>
-                📦 <span class="accent">송장 에러 1초 해결</span>:<br>
-                무료 엑셀 정제기
-            </h1>
+            <h1>📦 Summit Logic Magnet: 자동화의 시작</h1>
             <p>
-                스마트스토어 주문서의 이모지, 전화번호 오류, 불필요한 공백을<br>
-                한 번의 클릭으로 깨끗하게 정리합니다.
+                이곳은 단순한 '데이터 추출 도구'가 아닙니다.<br>
+                써밋로직이 사장님의 <span class="accent">물류 업무를 자동화</span>하기 위해<br>
+                <b>물류 데이터 수집 및 정제 준비</b>를 담당하는 첫 번째 관문입니다.
+            </p>
+            <p style="margin-top:6px; font-size:0.9rem; color:#6b7280;">
+                사장님의 엑셀 노가다를 끝내기 위한 데이터를, 안전하게 가져오고 있습니다.
             </p>
         </div>
         """,
@@ -396,20 +397,21 @@ def render_changes_preview(stats: dict):
 def render_cta():
     """
     하단 마케팅 CTA(Call-To-Action) 영역을 렌더링합니다.
-    써밋로직 본 제품으로의 전환을 유도하는 핵심 마케팅 메시지입니다.
+    정제된 데이터를 써밋로직 본 서비스로 자연스럽게 연결하는 역할을 합니다.
     """
     st.markdown(
         """
         <div class="cta-box">
-            <h3>아직도 합배송을 수동으로 하시나요?</h3>
+            <h3>정제는 끝났습니다. 이제 자동화 비서에게 넘겨주세요.</h3>
             <p>
-                써밋로직 V3.1로<br>
-                <span class="highlight">매달 27만 원</span>의 배송비를 아끼세요!
+                Magnet에서 깨끗하게 만든 주문 데이터를<br>
+                써밋로직 본 서비스로 전달하면,
+                <span class="highlight">합배송·송장 출력·배송비 절감</span>까지 한 번에 이어집니다.
             </p>
             <a class="cta-btn"
                href="https://summitlogic.streamlit.app"
                target="_blank">
-                🚀 써밋로직 V3.1 바로가기
+                🚀 자동화 비서에게 데이터 전달하기
             </a>
         </div>
         """,
@@ -425,7 +427,7 @@ def render_privacy_notice():
     with st.expander("🔒 개인정보 처리 방침 상세", expanded=False):
         st.markdown(
             """
-            **Summit Remover 데이터 처리 원칙**
+            **Summit Logic Magnet 데이터 처리 원칙**
 
             | 항목 | 내용 |
             |------|------|
@@ -440,15 +442,31 @@ def render_privacy_notice():
 
 
 def render_footer():
-    """앱 최하단 푸터를 렌더링합니다. Zero-Storage 원칙을 다시 한번 명시합니다."""
+    """앱 최하단 푸터를 렌더링합니다. 보안·신뢰 메시지를 다시 한번 명시합니다."""
     st.markdown(
         """
         <div class="footer">
-            Summit Remover &nbsp;|&nbsp;
-            summit-remover.com<br>
-            Zero-Storage 원칙: 업로드된 파일은 서버에 저장되지 않으며
-            처리 즉시 메모리에서 삭제됩니다.
+            Summit Logic Magnet &nbsp;|&nbsp;
+            Family of Summit Logic<br>
+            본 서비스는 데이터 보안을 최우선으로 하며,
+            수집된 정보는 정제 후 즉시 파기됩니다.
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+
+def render_founder_story():
+    """
+    언더독 창업자 스토리를 하단에 배치해 브랜드 신뢰도를 높입니다.
+    """
+    with st.expander("왜 Summit Logic Magnet 을 만들었나요?", expanded=False):
+        st.markdown(
+            """
+            2004년생 창업자가 정강이 수술 후 병실에서 직접 개발한 써밋로직의 패밀리 앱입니다.<br>
+            누구보다 셀러의 고통을 잘 알기에, 이 앱은 '데이터를 모으는 것'이 아니라
+            **사장님의 업무를 자동화하는 첫 번째 단계**에 집중합니다.<br><br>
+            사장님의 소중한 데이터는 정제 직후 안전하게 처리되며,
+            자동화 비서(Summit Logic)로 넘어가기 전까지 어떤 형태로도 저장되지 않습니다.
+            """
+        )

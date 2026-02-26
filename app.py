@@ -59,16 +59,18 @@ def main():
 
     # ── 파일 업로드 위젯 ──
     uploaded_file = st.file_uploader(
-        "스마트스토어 주문서 (Excel) 업로드",
+        "물류 데이터 (스마트스토어 주문서) 업로드",
         type=["xlsx"],
-        help="네이버 스마트스토어에서 다운로드한 주문 엑셀(.xlsx) 파일을 올려주세요.",
+        help="써밋로직 자동화를 위한 첫 단계입니다. 네이버 스마트스토어에서 다운로드한 주문 엑셀(.xlsx) 파일을 올려주세요.",
     )
 
     if uploaded_file is not None:
         try:
             file_bytes = uploaded_file.getvalue()
 
-            with st.spinner("🔄 데이터를 정제하고 있습니다..."):
+            st.info("📡 사장님의 엑셀 노가다를 끝내기 위한 데이터를, 안전하게 가져오고 있습니다.")
+
+            with st.spinner("🔄 물류 데이터 수집 및 정제 준비 중입니다... (이모지·전화번호·공백 점검)"):
                 t0 = time.time()
                 cleaned_df, stats = clean_dataframe(file_bytes)
                 elapsed = time.time() - t0
@@ -167,17 +169,18 @@ def main():
             """
             <div class="upload-placeholder">
                 <span style="font-size:2.5rem;">📂</span><br><br>
-                <b>스마트스토어 주문서 엑셀 파일을 업로드해 주세요</b><br>
+                <b>Summit Logic 자동화를 위한 물류 데이터를 업로드해 주세요</b><br>
                 <small>xlsx 형식 지원 · 데이터 서버 저장 없음</small>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    # ── 하단 CTA + 개인정보 방침 + 푸터 ──
+    # ── 하단 CTA + 개인정보 방침 + 창업자 스토리 + 푸터 ──
     st.markdown("---")
     render_cta()
     render_privacy_notice()
+    render_founder_story()
     render_footer()
 
 
