@@ -30,12 +30,14 @@ from ui.components import (
     render_changes_preview,
     render_cta,
     render_detected_columns,
+    render_feature_matrix,
     render_footer,
     render_header,
     render_privacy_notice,
     render_security_banner,
     render_stats,
     render_founder_story,
+    render_workflow,
     setup_page_config,
 )
 
@@ -55,6 +57,8 @@ def main():
     inject_custom_css()
     render_header()
     render_security_banner()
+    render_feature_matrix()
+    render_workflow()
 
     st.markdown("---")
 

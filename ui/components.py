@@ -9,9 +9,9 @@ import streamlit as st
 
 
 def setup_page_config():
-    """Streamlit 페이지 메타 설정 (탭 제목, 아이콘, 레이아웃)."""
+    """Streamlit 페이지 메타 설정 (탭 제목, 아이콘, 레이아웃). summit-remover.com 브랜딩 반영."""
     st.set_page_config(
-        page_title="Summit Logic Magnet | 자동화의 시작",
+        page_title="Summit Remover - 송장 에러 1초 해결 | 무료 엑셀 정제기",
         page_icon="📦",
         layout="centered",
     )
@@ -202,6 +202,46 @@ def inject_custom_css():
                 font-weight: 600;
             }
 
+            /* ── 핵심 기능 3박자 (Feature Matrix) ── */
+            .feature-matrix { margin: 24px 0 20px; }
+            .feature-matrix .section-title {
+                text-align: center; font-size: 1rem; font-weight: 700;
+                color: #16355b; margin-bottom: 14px;
+            }
+            .feature-row {
+                display: flex; flex-wrap: wrap; gap: 12px;
+                justify-content: center; align-items: stretch;
+            }
+            .feature-card {
+                flex: 1; min-width: 200px; max-width: 320px;
+                background: #f8fafc; border: 1px solid #e2e8f0;
+                border-radius: 12px; padding: 16px 18px;
+                text-align: left;
+            }
+            .feature-card .fe-icon { font-size: 1.6rem; margin-bottom: 8px; }
+            .feature-card .fe-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+            .feature-card .fe-desc { font-size: 0.82rem; color: #475569; line-height: 1.55; }
+
+            /* ── 사용 흐름 3단계 (Visual Workflow) ── */
+            .workflow-wrap { margin: 20px 0 24px; }
+            .workflow-wrap .section-title {
+                text-align: center; font-size: 1rem; font-weight: 700;
+                color: #16355b; margin-bottom: 14px;
+            }
+            .workflow-row {
+                display: flex; flex-wrap: wrap; gap: 10px;
+                justify-content: center; align-items: center;
+            }
+            .workflow-step {
+                flex: 1; min-width: 160px; max-width: 240px;
+                background: #0f172a; color: #e5e7eb;
+                border-radius: 12px; padding: 14px 16px;
+                text-align: center;
+            }
+            .workflow-step .wf-num { font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; }
+            .workflow-step .wf-label { font-size: 0.88rem; font-weight: 600; }
+            .workflow-arrow { font-size: 1.2rem; color: #64748b; font-weight: 700; }
+
             /* ── 업로드 대기 플레이스홀더 ── */
             .upload-placeholder {
                 background: #f8f9fa;
@@ -248,6 +288,11 @@ def inject_custom_css():
                 .trust-arrow { transform: rotate(90deg); }
                 .trust-step { max-width: 100%; min-width: 100%; }
                 .zs-badges { flex-direction: column; gap: 8px; align-items: center; }
+                .feature-row { flex-direction: column; align-items: center; }
+                .feature-card { max-width: 100%; min-width: 100%; }
+                .workflow-row { flex-direction: column; gap: 6px; }
+                .workflow-arrow { transform: rotate(90deg); }
+                .workflow-step { max-width: 100%; min-width: 100%; }
                 .cta-box { padding: 24px 16px; }
                 .cta-box .highlight { font-size: 1.1rem; }
                 .cta-btn { padding: 10px 24px; font-size: 0.9rem; }
@@ -329,6 +374,48 @@ def render_security_banner():
         """,
         unsafe_allow_html=True,
     )
+
+
+def render_feature_matrix():
+    """
+    마그넷이 사장님 대신 수행하는 3가지 임무(핵심 기능 3박자)를
+    Streamlit 네이티브 컴포넌트로 배치해 배포 환경에서도 확실히 노출됩니다.
+    """
+    st.subheader("🎯 마그넷이 사장님 대신 수행하는 3가지 임무")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("**🧹 데이터 정밀 세척**")
+        st.caption("엑셀 내 에러 유발 1순위인 이모지, 특수문자, 불필요한 공백을 1초 만에 제거합니다.")
+    with col2:
+        st.markdown("**📐 표준 규격 변환**")
+        st.caption("제각각인 전화번호 하이픈(-)과 주소 형식을 대한통운/로젠/한진 택배사 전산이 가장 좋아하는 규격으로 자동 보정합니다.")
+    with col3:
+        st.markdown("**📦 합배송 지능적 병합**")
+        st.caption("같은 고객의 중복 주문을 찾아내어 하나로 합칩니다. 매달 새어나가는 배송비를 즉시 아껴드립니다.")
+    st.markdown("")  # 여백
+
+
+def render_workflow():
+    """
+    사용자가 해야 할 일을 3단계로 명시하는 직관적 흐름도.
+    Streamlit 네이티브로 렌더링해 모든 배포 환경에서 노출됩니다.
+    """
+    st.subheader("📋 이렇게 사용하세요")
+    c1, arr1, c2, arr2, c3 = st.columns([2, 0.3, 2, 0.3, 2])
+    with c1:
+        st.markdown("**STEP 1**")
+        st.markdown("스마트스토어/쿠팡 발주서 엑셀 업로드")
+    with arr1:
+        st.markdown("→")
+    with c2:
+        st.markdown("**STEP 2**")
+        st.markdown("써밋로직 마그넷의 자동 정제 및 병합 가동")
+    with arr2:
+        st.markdown("→")
+    with c3:
+        st.markdown("**STEP 3**")
+        st.markdown("택배사 프로그램에 즉시 업로드 가능한 **무결점 파일** 다운로드")
+    st.markdown("")
 
 
 def render_stats(stats: dict):
@@ -428,6 +515,9 @@ def render_cta():
                target="_blank">
                 📢 베타 테스트 단톡방 참여 및 오류 제보하기
             </a>
+            <p style="margin-top:10px; font-size:0.85rem; color:#cbd5f5;">
+                <a href="https://open.kakao.com/o/g09q1vii" target="_blank" style="color:#93c5fd; text-decoration:underline;">내 엑셀 양식도 지원되는지 확인하기</a>
+            </p>
             <p style="margin-top:12px; font-size:0.8rem; color:#e5e7eb;">
                 오류 제보 후 닉네임을 말씀해주시면 감사의 커피 쿠폰을 보내드립니다! (병실 실시간 대기 중 🏥)
             </p>
@@ -479,14 +569,14 @@ def render_footer():
 
 def render_founder_story():
     """
-    언더독 창업자 스토리를 하단에 배치해 브랜드 신뢰도를 높입니다.
+    서비스 서사: 기능은 흉내 낼 수 있어도, 셀러의 고통을 아는 마음은 흉내 낼 수 없다는 메시지로
+    브랜드 신뢰도를 높입니다.
     """
     with st.expander("왜 Summit Logic Magnet 을 만들었나요?", expanded=False):
         st.markdown(
             """
-            2004년생 창업자가 정강이 수술 후 병실에서 직접 개발한 써밋로직의 패밀리 앱입니다.<br>
-            누구보다 셀러의 고통을 잘 알기에, 이 앱은 '데이터를 모으는 것'이 아니라
-            <b>사장님의 업무를 자동화하는 첫 번째 단계</b>에 집중합니다.<br><br>
+            기능은 흉내 낼 수 있어도, <b>셀러의 고통을 아는 마음은 흉내 낼 수 없습니다.</b><br><br>
+            2004년생 창업자가 정강이 수술 후 병실에서 직접 겪은 '송장 노가다'의 고통을 끝내기 위해 만든 실전용 서비스입니다.<br><br>
             사장님의 소중한 데이터는 정제 직후 안전하게 처리되며,
             자동화 비서(Summit Logic)로 넘어가기 전까지 어떤 형태로도 저장되지 않습니다.
             """,
