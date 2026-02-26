@@ -31,6 +31,16 @@ def inject_custom_css():
             .main { background-color: #ffffff; }
             body  { font-family: 'Noto Sans KR', sans-serif; }
 
+            /* ── 상단 베타 배너 ── */
+            .beta-banner {
+                background: #0f172a;
+                color: #e5e7eb;
+                font-size: 0.8rem;
+                padding: 6px 12px;
+                text-align: center;
+                border-bottom: 1px solid #1f2937;
+            }
+
             /* ── 히어로 헤더 ── */
             .hero-header {
                 text-align: center;
@@ -108,18 +118,20 @@ def inject_custom_css():
             }
             .cta-btn {
                 display: inline-block;
-                background: #ffffff;
-                color: #1a73e8;
+                background: #f9fafb;
+                color: #0f172a;
                 font-weight: 700;
                 font-size: 1rem;
                 padding: 12px 36px;
                 border-radius: 28px;
                 text-decoration: none;
-                transition: transform 0.2s, box-shadow 0.2s;
+                box-shadow: 0 8px 16px rgba(15,23,42,0.25);
+                transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
             }
             .cta-btn:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                box-shadow: 0 10px 20px rgba(15,23,42,0.35);
+                background: #ffffff;
             }
 
             /* ── Zero-Storage 보안 카드 ── */
@@ -250,6 +262,9 @@ def render_header():
     """앱 최상단 히어로 헤더를 렌더링합니다."""
     st.markdown(
         """
+        <div class="beta-banner">
+            🚀 써밋로직 마그넷 V3.1 Beta - 실전 필드 테스트 진행 중
+        </div>
         <div class="hero-header">
             <h1>📦 Summit Logic Magnet: 자동화의 시작</h1>
             <p>
@@ -396,23 +411,29 @@ def render_changes_preview(stats: dict):
 
 def render_cta():
     """
-    하단 마케팅 CTA(Call-To-Action) 영역을 렌더링합니다.
-    정제된 데이터를 써밋로직 본 서비스로 자연스럽게 연결하는 역할을 합니다.
+    하단 베타 피드백 CTA 영역을 렌더링합니다.
+    사장님과 함께 서비스를 만들어가는 참여형 섹션입니다.
     """
     st.markdown(
         """
         <div class="cta-box">
-            <h3>정제는 끝났습니다. 이제 자동화 비서에게 넘겨주세요.</h3>
+            <h3>사장님의 소중한 시간을 1분 1초라도 아껴드리고 싶습니다.</h3>
             <p>
-                Magnet에서 깨끗하게 만든 주문 데이터를<br>
-                써밋로직 본 서비스로 전달하면,
-                <span class="highlight">합배송·송장 출력·배송비 절감</span>까지 한 번에 이어집니다.
+                아직은 부족한 베타 버전이지만, 사장님의 피드백 하나가<br>
+                대한민국 최고의 물류 서비스를 만듭니다.<br>
+                찐빠(오류) 발생 시 제보해주시면 병실에서 10분 내로 즉시 수정하겠습니다.
             </p>
             <a class="cta-btn"
-               href="https://summitlogic.streamlit.app"
+               href="https://open.kakao.com/o/g09q1vii"
                target="_blank">
-                🚀 자동화 비서에게 데이터 전달하기
+                📢 베타 테스트 단톡방 참여 및 오류 제보하기
             </a>
+            <p style="margin-top:12px; font-size:0.8rem; color:#e5e7eb;">
+                오류 제보 후 닉네임을 말씀해주시면 감사의 커피 쿠폰을 보내드립니다! (병실 실시간 대기 중 🏥)
+            </p>
+            <p style="margin-top:4px; font-size:0.75rem; color:#cbd5f5;">
+                써밋로직은 사장님의 원본 엑셀 데이터를 절대 훼손하거나 저장하지 않습니다. 오직 정제 후 파일 생성 목적으로만 사용됩니다.
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
