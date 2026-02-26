@@ -18,6 +18,8 @@ app.py — Summit Logic 무료 엑셀 데이터 정제기 (Lead Magnet)
 """
 
 import re
+import time
+import unicodedata
 import zipfile
 from io import BytesIO
 from typing import List, Tuple
@@ -68,6 +70,8 @@ _ADDRESS_KEYWORDS = [
 
 # NaN·빈값으로 판별할 문자열 집합 (frozenset으로 O(1) 탐색)
 _NULL_STRINGS = frozenset({"nan", "none", "null", "n/a", "-", ""})
+
+_ORDER_KEYWORDS = ["상품주문번호", "주문번호", "order"]
 
 # 스마트스토어 엑셀 헤더 행 자동 탐색에 사용할 키워드
 # 이 중 2개 이상이 한 행에 존재하면 해당 행을 헤더로 판정합니다.
@@ -148,8 +152,8 @@ def remove_emoji(text: str) -> str:
     if pd.isna(text):
         return ""
     text = str(text)
+    text = unicodedata.normalize("NFKC", text)
     text = _EMOJI_RE.sub("", text)
-    # 탭·줄바꿈 등 ASCII 제어문자 → 공백 치환
     text = re.sub(r"[\x00-\x1f\x7f]", " ", text)
     # 연속 공백을 단일 공백으로 압축
     text = re.sub(r" {2,}", " ", text)
@@ -182,7 +186,16 @@ def format_phone_number(raw: str) -> str:
     if text.lower() in _NULL_STRINGS:
         return ""
 
-    # 숫자만 추출
+    # 엑셀이 전화번호를 숫자로 저장한 경우 float 문자열 처리
+    # "1012345678.0" 또는 "1.01234568E+09" → "1012345678"
+    if "." in text or "e" in text.lower():
+        try:
+            num_val = float(text)
+            if 1e7 < num_val < 1e12:
+                text = str(int(num_val))
+        except (ValueError, OverflowError):
+            pass
+
     digits = re.sub(r"[^0-9]", "", text)
     if not digits:
         return text
@@ -190,6 +203,14 @@ def format_phone_number(raw: str) -> str:
     # +82 국제전화 코드 → 0으로 치환 (예: 821012345678 → 01012345678)
     if digits.startswith("82") and 11 <= len(digits) <= 13:
         digits = "0" + digits[2:]
+
+    # 엑셀이 앞자리 0을 날린 경우 복원
+    # 휴대폰: 01012345678 → Excel 숫자 변환 → 1012345678 (10자리, "10"으로 시작)
+    if len(digits) == 10 and digits[:2] in ("10", "11", "16", "17", "18", "19"):
+        digits = "0" + digits
+    # 서울: 0212345678 → 212345678 (9자리) / 021234567 → 21234567 (8자리)
+    elif len(digits) in (8, 9) and digits.startswith("2"):
+        digits = "0" + digits
 
     # 휴대폰 11자리: 010-XXXX-XXXX (3-4-4 분할)
     if len(digits) == 11 and digits.startswith("01"):
@@ -277,6 +298,11 @@ def detect_address_columns(df: pd.DataFrame) -> List[str]:
     return _detect_columns_by_keywords(df.columns.tolist(), _ADDRESS_KEYWORDS)
 
 
+def detect_order_columns(df: pd.DataFrame) -> List[str]:
+    """주문번호 관련 컬럼을 키워드 기반으로 자동 감지합니다."""
+    return _detect_columns_by_keywords(df.columns.tolist(), _ORDER_KEYWORDS)
+
+
 # ╔═══════════════════════════════════════════════════════════╗
 # ║  4. DATAFRAME PROCESSING — 데이터프레임 일괄 정제        ║
 # ║  → 확장 시 dataframe_processor.py 로 분리                ║
@@ -333,6 +359,8 @@ def clean_dataframe(
             "엑셀 파일에 주문 데이터가 포함되어 있는지 확인해 주세요."
         )
 
+    original_df = df.copy()
+
     stats = {
         "total_rows": len(df),
         "total_cols": len(df.columns),
@@ -374,6 +402,33 @@ def clean_dataframe(
         before = df[col].copy()
         df[col] = df[col].apply(strip_whitespace)
         stats["whitespace_trimmed"] += int((before != df[col]).sum())
+
+    # ── Step 5: 주문번호 중복 감지 (삭제하지 않고 정보만 제공) ──
+    order_cols = detect_order_columns(df)
+    stats["order_columns"] = order_cols
+    duplicate_count = 0
+    if order_cols:
+        duplicate_count = int(df[order_cols[0]].duplicated().sum())
+    stats["duplicate_orders"] = duplicate_count
+
+    # ── Step 6: 변경 내역 생성 (before/after 비교, 최대 50건) ──
+    changes: list = []
+    total_changes = 0
+    for col in df.columns:
+        mask = original_df[col] != df[col]
+        total_changes += int(mask.sum())
+        if len(changes) < 50:
+            for idx in df.index[mask]:
+                if len(changes) >= 50:
+                    break
+                changes.append({
+                    "행": idx + 1,
+                    "컬럼": col,
+                    "변경 전": original_df.at[idx, col],
+                    "변경 후": df.at[idx, col],
+                })
+    stats["changes_preview"] = changes
+    stats["total_changes"] = total_changes
 
     return df, stats
 
@@ -779,6 +834,23 @@ def render_detected_columns(stats: dict):
                 st.caption("감지된 컬럼 없음")
 
 
+def render_changes_preview(stats: dict):
+    """변경 내역 before/after 미리보기를 표시합니다."""
+    changes = stats.get("changes_preview", [])
+    total = stats.get("total_changes", 0)
+    if not changes:
+        return
+    label = f"🔎 변경 내역 상세 — 총 {total}건"
+    if len(changes) < total:
+        label += f" 중 상위 {len(changes)}건 표시"
+    with st.expander(label, expanded=False):
+        st.dataframe(
+            pd.DataFrame(changes),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+
 def render_cta():
     """
     하단 마케팅 CTA(Call-To-Action) 영역을 렌더링합니다.
@@ -875,7 +947,9 @@ def main():
             file_bytes = uploaded_file.getvalue()
 
             with st.spinner("🔄 데이터를 정제하고 있습니다..."):
+                t0 = time.time()
                 cleaned_df, stats = clean_dataframe(file_bytes)
+                elapsed = time.time() - t0
 
             # ── 헤더 행 탐색 결과 안내 (0이 아닌 경우만 표시) ──
             if stats.get("header_row_detected", 0) > 0:
@@ -903,15 +977,27 @@ def main():
 
             # ── 처리 완료 메시지 ──
             st.success(
-                f"✅ 정제 완료! "
-                f"{stats['total_rows']}개 행에서 "
+                f"✅ 정제 완료! ({elapsed:.1f}초) "
+                f"{stats['total_rows']}개 행에서 총 "
+                f"**{stats['total_changes']}건** 수정 — "
                 f"이모지 {stats['emoji_removed']}건, "
                 f"전화번호 {stats['phone_formatted']}건, "
-                f"공백 {stats['whitespace_trimmed']}건을 처리했습니다."
+                f"공백 {stats['whitespace_trimmed']}건"
             )
+
+            # ── 중복 주문 감지 알림 ──
+            if stats.get("duplicate_orders", 0) > 0:
+                st.info(
+                    f"📋 주문번호 기준 **{stats['duplicate_orders']}건**의 "
+                    f"중복 행이 감지되었습니다. "
+                    f"(데이터는 삭제하지 않고 그대로 유지합니다)"
+                )
 
             # ── 통계 카드 (4장) ──
             render_stats(stats)
+
+            # ── 변경 내역 before/after ──
+            render_changes_preview(stats)
 
             # ── 자동 감지 컬럼 확인 (접이식) ──
             render_detected_columns(stats)
