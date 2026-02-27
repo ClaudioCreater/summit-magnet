@@ -91,25 +91,40 @@ def clean_dataframe(
         df[col] = df[col].apply(remove_emoji)
         stats["emoji_removed"] += int((before != df[col]).sum())
 
-    # ── Step 2: 전화번호 컬럼 감지 → 하이픈 포맷 적용 ──
-    phone_cols = detect_phone_columns(df)
+    # ── Step 2~4: 컬럼 자동 감지 + 상호 배제 적용 ──
+    # 1) 원본 감지 결과
+    phone_cols_detected = detect_phone_columns(df)
+    name_cols_detected = detect_name_columns(df)
+    address_cols_detected = detect_address_columns(df)
+
+    # 2) 상호 배제 규칙 적용
+    #    - 먼저 전화번호로 확정된 컬럼은 이름/주소 후보에서 제거
+    #    - 그다음 이름으로 확정된 컬럼은 주소 후보에서 제거
+    phone_cols = list(dict.fromkeys(phone_cols_detected))
+    name_cols = [c for c in name_cols_detected if c not in phone_cols]
+    address_cols = [
+        c
+        for c in address_cols_detected
+        if c not in phone_cols and c not in name_cols
+    ]
+
     stats["phone_columns"] = phone_cols
+    stats["name_columns"] = name_cols
+    stats["address_columns"] = address_cols
+
+    # ── Step 2: 전화번호 포맷 적용 ──
     for col in phone_cols:
         before = df[col].copy()
         df[col] = df[col].apply(format_phone_number)
         stats["phone_formatted"] += int((before != df[col]).sum())
 
     # ── Step 3: 성함 컬럼 공백 정리 ──
-    name_cols = detect_name_columns(df)
-    stats["name_columns"] = name_cols
     for col in name_cols:
         before = df[col].copy()
         df[col] = df[col].apply(strip_whitespace)
         stats["whitespace_trimmed"] += int((before != df[col]).sum())
 
     # ── Step 4: 주소 컬럼 공백 정리 ──
-    address_cols = detect_address_columns(df)
-    stats["address_columns"] = address_cols
     for col in address_cols:
         before = df[col].copy()
         df[col] = df[col].apply(strip_whitespace)
